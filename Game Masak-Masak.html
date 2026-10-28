@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Permainan Restoran Masakan Sim</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: linear-gradient(135deg, #fef3c7 0%, #fed7aa 100%);
+            min-height: 100vh;
+        }
+        .font-game {
+            font-family: 'Fredoka', cursive;
+        }
+        .cooking-progress-bar {
+            transition: width 0.1s linear;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #fb923c;
+            border-radius: 10px;
+        }
+        .bounce-in {
+            animation: bounceIn 0.3s ease-out;
+        }
+        @keyframes bounceIn {
+            0% { transform: scale(0.8); opacity: 0; }
+            70% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .steam {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.6);
+            border-radius: 50%;
+            animation: steamAnim 2s infinite ease-out;
+        }
+        @keyframes steamAnim {
+            0% { transform: translateY(0) scale(1); opacity: 0.8; }
+            100% { transform: translateY(-30px) scale(1.5); opacity: 0; }
+        }
+    </style>
+</head>
+<body class="text-slate-800 p-2 md:p-6 pb-20">
+
+    <!-- Header & Dashboard Stats -->
+    <header class="max-w-6xl mx-auto bg-white/90 backdrop-blur-md rounded-2xl p-4 shadow-lg border border-orange-100 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Brand -->
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 bg-gradient-to-tr from-amber-500 to-orange-400 rounded-2xl flex items-center justify-center text-white text-2xl shadow-md transform rotate-3">
+                    <i class="fa-solid fa-utensils"></i>
+                </div>
+                <div>
+                    <h1 class="font-game text-2xl font-bold text-slate-800 tracking-wide">Selera Kampung Tycoon</h1>
+                    <p class="text-xs text-slate-500 flex items-center gap-1">
+                        <span id="day-badge" class="bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full font-semibold">Hari ke-1</span>
+                        <span>•</span>
+                        <span id="restaurant-level" class="text-orange-600 font-semibold">Warung Kecil</span>
+                    </p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="flex flex-wrap items-center gap-3 text-sm font-semibold">
+                <!-- Wang -->
+                <div class="bg-amber-50 border border-amber-200 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-coins text-amber-500 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase leading-none">Wang</div>
+                        <div class="font-game text-base text-slate-800" id="stat-money">RM 150.00</div>
+                    </div>
+                </div>
+
+                <!-- Reputasi / Bintang -->
+                <div class="bg-rose-50 border border-rose-200 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-star text-rose-500 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase leading-none">Reputasi</div>
+                        <div class="font-game text-base text-slate-800" id="stat-reputation">4.5 / 5.0</div>
+                    </div>
+                </div>
+
+                <!-- Pelanggan Dilayani -->
+                <div class="bg-emerald-50 border border-emerald-200 px-4 py-2 rounded-xl flex items-center gap-2">
+                    <i class="fa-solid fa-users text-emerald-500 text-lg"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-400 uppercase leading-none">Pelanggan</div>
+                        <div class="font-game text-base text-slate-800" id="stat-customers">0</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Workspace -->
+    <main class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Column 1: Pelanggan & Pesanan (Lefthand 4 cols) -->
+        <section class="lg:col-span-4 flex flex-col gap-4">
+            <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100 flex-1">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="font-game text-lg text-slate-800 flex items-center gap-2">
+                        <i class="fa-solid fa-user-clock text-orange-500"></i>
+                        Pelanggan Menunggu (<span id="customer-count">0</span>/4)
+                    </h2>
+                    <span class="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded-md" id="customer-spawn-timer">Pelanggan baru...</span>
+                </div>
+
+                <!-- Container Pelanggan -->
+                <div id="customers-container" class="space-y-3 min-h-[360px] custom-scrollbar overflow-y-auto max-h-[500px] pr-1">
+                    <!-- Dynamic Customers Injected via JS -->
+                </div>
+            </div>
+
+            <!-- Modal / Log Aktiviti Terkini -->
+            <div class="bg-white/80 rounded-2xl p-4 shadow-sm border border-slate-100 text-xs text-slate-600 h-32 overflow-hidden flex flex-col">
+                <div class="font-semibold text-slate-700 mb-1 flex items-center gap-1">
+                    <i class="fa-solid fa-list-check text-xs text-amber-500"></i> Log Restoran
+                </div>
+                <div id="activity-log" class="space-y-1 custom-scrollbar overflow-y-auto flex-1">
+                    <p class="text-slate-400 italic">Selamat datang! Sediakan makanan untuk pelanggan anda.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 2: Stesen Masakan (Center 5 cols) -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            <!-- Kitchen Counter -->
+            <div class="bg-white rounded-2xl p-5 shadow-md border border-slate-100">
+                <h2 class="font-game text-lg text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-fire-burner text-amber-500"></i>
+                    Dapur Memasak
+                </h2>
+
+                <!-- Cooking Slots Grid -->
+                <div class="grid grid-cols-2 gap-3 mb-4" id="cooking-slots-container">
+                    <!-- 4 Cooking slots injected via JS -->
+                </div>
+
+                <!-- Dish Creator Controls -->
+                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200">
+                    <h3 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Pilih Masakan Untuk Disediakan:</h3>
+                    
+                    <div class="grid grid-cols-2 gap-2" id="recipe-buttons">
+                        <!-- Dynamic Recipe Selection Buttons -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Finished Dishes Counter / Ready to Serve -->
+            <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100">
+                <h2 class="font-game text-base text-slate-800 mb-3 flex items-center justify-between">
+                    <span class="flex items-center gap-2"><i class="fa-solid fa-plate-wheat text-emerald-500"></i> Hidangan Sedia Disajikan</span>
+                    <span class="text-xs text-slate-400">Klik makanan kemudian klik pesanan pelanggan</span>
+                </h2>
+                <div id="ready-dishes-container" class="flex flex-wrap gap-3 min-h-[70px] bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300">
+                    <!-- Dishes ready to serve -->
+                    <span class="text-xs text-slate-400 m-auto" id="empty-ready-msg">Dapur kosong. Mula memasak!</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 3: Pengurusan & Naik Taraf (Righthand 3 cols) -->
+        <section class="lg:col-span-3 flex flex-col gap-4">
+            <!-- Navigation Tabs for Upgrades/Inventory -->
+            <div class="bg-white rounded-2xl p-4 shadow-md border border-slate-100 flex-1 flex flex-col">
+                <div class="flex border-b border-slate-100 mb-3">
+                    <button onclick="switchTab('upgrades')" id="tab-btn-upgrades" class="flex-1 pb-2 text-xs font-bold text-orange-600 border-b-2 border-orange-500 transition-all">
+                        <i class="fa-solid fa-arrow-up-right-dots"></i> Naik Taraf
+                    </button>
+                    <button onclick="switchTab('pantry')" id="tab-btn-pantry" class="flex-1 pb-2 text-xs font-bold text-slate-400 border-b-2 border-transparent transition-all">
+                        <i class="fa-solid fa-boxes-stacked"></i> Stok Bahan
+                    </button>
+                </div>
+
+                <!-- Tab content: Upgrades -->
+                <div id="tab-content-upgrades" class="space-y-3 flex-1 custom-scrollbar overflow-y-auto max-h-[420px]">
+                    <!-- Upgrades Item 1: Dapur Tambahan -->
+                    <div class="bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">Dapur Memasak Extra</h4>
+                                <p class="text-[10px] text-slate-500">Tambah slot slot memasak baharu.</p>
+                            </div>
+                            <span class="text-xs font-bold text-amber-600 font-game" id="upgrade-stove-cost">RM 80</span>
+                        </div>
+                        <button onclick="buyStoveUpgrade()" id="btn-upgrade-stove" class="w-full mt-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow-sm transition">
+                            Beli Slot Dapur
+                        </button>
+                    </div>
+
+                    <!-- Upgrades Item 2: Kelajuan Memasak -->
+                    <div class="bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">Dapur Gas Berkuasa High</h4>
+                                <p class="text-[10px] text-slate-500">Memasak 25% lebih cepat.</p>
+                            </div>
+                            <span class="text-xs font-bold text-amber-600 font-game" id="upgrade-speed-cost">RM 120</span>
+                        </div>
+                        <button onclick="buySpeedUpgrade()" id="btn-upgrade-speed" class="w-full mt-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow-sm transition">
+                            Naik Taraf Kelajuan
+                        </button>
+                    </div>
+
+                    <!-- Upgrades Item 3: Menu Baharu -->
+                    <div class="bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">Resepi Premium: Rendang</h4>
+                                <p class="text-[10px] text-slate-500">Buka hidangan harga tinggi.</p>
+                            </div>
+                            <span class="text-xs font-bold text-amber-600 font-game">RM 200</span>
+                        </div>
+                        <button onclick="unlockRendang()" id="btn-unlock-rendang" class="w-full mt-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow-sm transition">
+                            Buka Resepi Rendang
+                        </button>
+                    </div>
+
+                    <!-- Upgrades Item 4: Pelayan Restoran -->
+                    <div class="bg-orange-50/60 p-3 rounded-xl border border-orange-100">
+                        <div class="flex justify-between items-start mb-1">
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">Hiasan Restoran</h4>
+                                <p class="text-[10px] text-slate-500">Pelanggan lebih sabar (+20%).</p>
+                            </div>
+                            <span class="text-xs font-bold text-amber-600 font-game">RM 150</span>
+                        </div>
+                        <button onclick="buyDecor()" id="btn-buy-decor" class="w-full mt-2 bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs py-1.5 px-3 rounded-lg shadow-sm transition">
+                            Beli Hiasan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Tab content: Pantry / Inventory -->
+                <div id="tab-content-pantry" class="space-y-3 flex-1 custom-scrollbar overflow-y-auto max-h-[420px] hidden">
+                    <p class="text-xs text-slate-500 mb-2">Beli bekalan stok bahan mentah jika kehabisan:</p>
+                    <div id="pantry-items-list" class="space-y-2">
+                        <!-- Dynamic Stock List -->
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Notification Toast / Custom Alert -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white text-xs px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <i id="toast-icon" class="fa-solid fa-circle-info text-amber-400 text-base"></i>
+        <span id="toast-message">Mesej notifikasi di sini...</span>
+    </div>
+
+    <!-- Game Script Logic -->
+    <script>
+        // --- GAME STATE ---
+        const gameState = {
+            money: 150.00,
+            reputation: 4.5,
+            totalCustomers: 0,
+            day: 1,
+            cookingSpeedMultiplier: 1.0,
+            patienceMultiplier: 1.0,
+            maxCustomers: 4,
+            stoveSlotsCount: 2,
+            rendangUnlocked: false,
+            decorBought: false,
+            
+            // Recipes available
+            recipes: {
+                nasiLemat: {
+                    id: 'nasiLemat',
+                    name: 'Nasi Lemak',
+                    price: 8.00,
+                    cost: 3.00,
+                    cookTime: 5, // in seconds
+                    icon: '🍚',
+                    color: 'bg-emerald-100 text-emerald-700 border-emerald-300',
+                    ingredients: { rice: 1, sambal: 1, egg: 1 }
+                },
+                mieGoreng: {
+                    id: 'mieGoreng',
+                    name: 'Mee Goreng Mamak',
+                    price: 7.00,
+                    cost: 2.50,
+                    cookTime: 4,
+                    icon: '🍜',
+                    color: 'bg-amber-100 text-amber-700 border-amber-300',
+                    ingredients: { noodle: 1, veg: 1 }
+                },
+                tehTarik: {
+                    id: 'tehTarik',
+                    name: 'Teh Tarik',
+                    price: 3.50,
+                    cost: 1.00,
+                    cookTime: 2,
+                    icon: '☕',
+                    color: 'bg-orange-100 text-orange-700 border-orange-300',
+                    ingredients: { tea: 1, milk: 1 }
+                },
+                rendang: {
+                    id: 'rendang',
+                    name: 'Rendang Daging',
+                    price: 18.00,
+                    cost: 7.00,
+                    cookTime: 8,
+                    icon: '🍖',
+                    color: 'bg-rose-100 text-rose-700 border-rose-300',
+                    ingredients: { meat: 1, spices: 1 },
+                    locked: true
+                }
+            },
+
+            // Inventory Stock
+            inventory: {
+                rice: 20,
+                sambal: 20,
+                egg: 20,
+                noodle: 20,
+                veg: 20,
+                tea: 20,
+                milk: 20,
+                meat: 10,
+                spices: 10
+            },
+
+            // Cooking Slots
+            stoveSlots: [
+                { id: 0, status: 'empty', dish: null, progress: 0, timer: null },
+                { id: 1, status: 'empty', dish: null, progress: 0, timer: null },
+                { id: 2, status: 'locked', dish: null, progress: 0, timer: null },
+                { id: 3, status: 'locked', dish: null, progress: 0, timer: null }
+            ],
+
+            // Dishes ready to serve
+            readyDishes: [],
+
+            // Customers queue
+            customers: [],
+
+            // Selected Dish to Serve
+            selectedDishIndex: null
+        };
+
+        const customerNames = ["Ahmad", "Siti", "Chung", "Muthu", "Sarah", "Kamal", "Mei Ling", "Ravi", "Farah", "Zul"];
+        const customerAvatars = [
+            "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=100&q=80",
+            "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=100&q=80",
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80",
+            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80"
+        ];
+
+        // --- INITIALIZATION ---
+        window.onload = function() {
+            renderRecipes();
+            renderStoveSlots();
+            renderPantry();
+            updateUIStats();
+            
+            // Spawn initial customers
+            spawnCustomer();
+            spawnCustomer();
+
+            // Interval loops
+            setInterval(gameLoop, 1000);
+            setInterval(customerSpawnerLoop, 7000);
+        };
+
+        // --- GAME LOOPS ---
+        function gameLoop() {
+            // Update customer patience
+            gameState.customers.forEach((cust, index) => {
+                cust.patience -= (100 / cust.maxPatience);
+                if (cust.patience <= 0) {
+                    // Customer leaves disappointed
+                    customerLeavesAngry(index);
+                }
+            });
+
+            renderCustomers();
+        }
+
+        function customerSpawnerLoop() {
+            if (gameState.customers.length < gameState.maxCustomers) {
+                spawnCustomer();
+            }
+        }
+
+        // --- CUSTOMER LOGIC ---
+        function spawnCustomer() {
+            const availableRecipeKeys = Object.keys(gameState.recipes).filter(key => !gameState.recipes[key].locked);
+            const randomRecipeKey = availableRecipeKeys[Math.floor(Math.random() * availableRecipeKeys.length)];
+            const randomName = customerNames[Math.floor(Math.random() * customerNames.length)];
+            const randomAvatar = customerAvatars[Math.floor(Math.random() * customerAvatars.length)];
+            
+            const newCust = {
+                id: Date.now() + Math.random(),
+                name: randomName,
+                avatar: randomAvatar,
+                order: gameState.recipes[randomRecipeKey],
+                patience: 100, // percentage
+                maxPatience: Math.floor((15 + Math.random() * 15) * gameState.patienceMultiplier) // seconds patience
+            };
+
+            gameState.customers.push(newCust);
+            renderCustomers();
+            addLog(`Pelanggan <b>${newCust.name}</b> sampai dan memesan <i>${newCust.order.name}</i>.`);
+        }
+
+        function renderCustomers() {
+            const container = document.getElementById('customers-container');
+            document.getElementById('customer-count').innerText = gameState.customers.length;
+
+            if (gameState.customers.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">Tiada pelanggan pada masa ini. Sila tunggu...</div>`;
+                return;
+            }
+
+            container.innerHTML = gameState.customers.map((cust, idx) => {
+                let barColor = 'bg-emerald-500';
+                if (cust.patience < 50) barColor = 'bg-amber-500';
+                if (cust.patience < 25) barColor = 'bg-rose-500';
+
+                return `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center justify-between gap-3 bounce-in hover:border-orange-300 transition">
+                    <div class="flex items-center gap-3">
+                        <img src="${cust.avatar}" class="w-10 h-10 rounded-full object-cover border border-amber-300 shadow-sm" alt="Pelanggan" onerror="this.src='https://placehold.co/100x100/orange/white?text=U'">
+                        <div>
+                            <h4 class="font-bold text-xs text-slate-800">${cust.name}</h4>
+                            <div class="flex items-center gap-1 text-[11px] font-semibold text-orange-600 mt-0.5">
+                                <span>${cust.order.icon}</span>
+                                <span>${cust.order.name}</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col items-end gap-1 min-w-[90px]">
+                        <span class="text-[10px] text-slate-400">RM ${cust.order.price.toFixed(2)}</span>
+                        <!-- Patience Bar -->
+                        <div class="w-full bg-slate-200 rounded-full h-2 overflow-hidden">
+                            <div class="${barColor} h-full transition-all duration-1000" style="width: ${Math.max(0, cust.patience)}%"></div>
+                        </div>
+                        <button onclick="serveSelectedDishToCustomer(${idx})" class="mt-1 bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-[10px] px-2.5 py-1 rounded-md shadow-sm transition flex items-center gap-1">
+                            <i class="fa-solid fa-bell-concierge"></i> Hidangkan
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function customerLeavesAngry(index) {
+            const cust = gameState.customers[index];
+            if (!cust) return;
+
+            // Penalty
+            gameState.reputation = Math.max(1.0, (gameState.reputation - 0.2)).toFixed(1);
+            addLog(`<span class="text-rose-500"><b>${cust.name}</b> beredar kerana terlalu lama menunggu! (-0.2 Reputasi)</span>`);
+            showToast(`${cust.name} meninggalkan restoran dengan kecewa!`, 'error');
+
+            gameState.customers.splice(index, 1);
+            updateUIStats();
+            renderCustomers();
+        }
+
+        // --- COOKING STATION LOGIC ---
+        function renderRecipes() {
+            const container = document.getElementById('recipe-buttons');
+            container.innerHTML = Object.keys(gameState.recipes).map(key => {
+                const recipe = gameState.recipes[key];
+                if (recipe.locked) return '';
+
+                return `
+                <button onclick="startCooking('${recipe.id}')" class="${recipe.color} border p-2.5 rounded-xl flex items-center gap-2 hover:brightness-95 transition text-left shadow-sm">
+                    <span class="text-2xl">${recipe.icon}</span>
+                    <div class="overflow-hidden">
+                        <div class="font-bold text-xs truncate">${recipe.name}</div>
+                        <div class="text-[10px] opacity-80">Kos: RM ${recipe.cost.toFixed(2)} • ${recipe.cookTime}s</div>
+                    </div>
+                </button>
+                `;
+            }).join('');
+        }
+
+        function renderStoveSlots() {
+            const container = document.getElementById('cooking-slots-container');
+            container.innerHTML = gameState.stoveSlots.map((slot, index) => {
+                if (slot.status === 'locked') {
+                    return `
+                    <div class="border-2 border-dashed border-slate-200 rounded-xl p-4 flex flex-col items-center justify-center text-slate-300 min-h-[110px]">
+                        <i class="fa-solid fa-lock text-xl mb-1"></i>
+                        <span class="text-[10px] font-bold">Slot Terkunci</span>
+                    </div>
+                    `;
+                }
+
+                if (slot.status === 'empty') {
+                    return `
+                    <div class="border-2 border-dashed border-orange-200 bg-orange-50/30 rounded-xl p-4 flex flex-col items-center justify-center text-orange-300 min-h-[110px]">
+                        <i class="fa-solid fa-fire text-2xl mb-1"></i>
+                        <span class="text-[10px] font-bold text-orange-400">Dapur Kosong</span>
+                    </div>
+                    `;
+                }
+
+                if (slot.status === 'cooking') {
+                    return `
+                    <div class="relative bg-white border border-amber-300 rounded-xl p-3 flex flex-col justify-between shadow-sm min-h-[110px] overflow-hidden">
+                        <div class="flex items-center gap-2">
+                            <span class="text-2xl">${slot.dish.icon}</span>
+                            <div>
+                                <h4 class="font-bold text-xs text-slate-800">${slot.dish.name}</h4>
+                                <span class="text-[9px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-semibold">Sedang Memasak...</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Cooking progress -->
+                        <div class="mt-2">
+                            <div class="flex justify-between text-[9px] text-slate-400 mb-1">
+                                <span>Masa</span>
+                                <span>${Math.round(slot.progress)}%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-amber-500 h-full cooking-progress-bar" style="width: ${slot.progress}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        function startCooking(recipeId) {
+            const recipe = gameState.recipes[recipeId];
+            if (!recipe) return;
+
+            // Check money for ingredients cost
+            if (gameState.money < recipe.cost) {
+                showToast("Wang tidak mencukupi untuk bahan masakan!", "error");
+                return;
+            }
+
+            // Check stock
+            for (let ing in recipe.ingredients) {
+                if ((gameState.inventory[ing] || 0) < recipe.ingredients[ing]) {
+                    showToast(`Stok ${ing} kehabisan! Sila beli di tab Stok Bahan.`, "error");
+                    return;
+                }
+            }
+
+            // Find free stove slot
+            const freeSlotIndex = gameState.stoveSlots.findIndex(s => s.status === 'empty');
+            if (freeSlotIndex === -1) {
+                showToast("Semua dapur sedang digunakan! Sila tunggu.", "warning");
+                return;
+            }
+
+            // Deduct cost & stock
+            gameState.money -= recipe.cost;
+            for (let ing in recipe.ingredients) {
+                gameState.inventory[ing] -= recipe.ingredients[ing];
+            }
+            updateUIStats();
+            renderPantry();
+
+            // Set Slot Cooking
+            const slot = gameState.stoveSlots[freeSlotIndex];
+            slot.status = 'cooking';
+            slot.dish = recipe;
+            slot.progress = 0;
+
+            renderStoveSlots();
+            addLog(`Mula memasak <b>${recipe.name}</b> di Dapur #${freeSlotIndex + 1}.`);
+
+            // Timer for cooking
+            const duration = (recipe.cookTime / gameState.cookingSpeedMultiplier) * 1000;
+            const intervalTime = 100;
+            const step = (intervalTime / duration) * 100;
+
+            slot.timer = setInterval(() => {
+                slot.progress += step;
+                if (slot.progress >= 100) {
+                    clearInterval(slot.timer);
+                    finishCooking(freeSlotIndex);
+                } else {
+                    renderStoveSlots();
+                }
+            }, intervalTime);
+        }
+
+        function finishCooking(slotIndex) {
+            const slot = gameState.stoveSlots[slotIndex];
+            const finishedDish = slot.dish;
+
+            // Reset Slot
+            slot.status = 'empty';
+            slot.dish = null;
+            slot.progress = 0;
+
+            // Add to Ready Dishes
+            gameState.readyDishes.push(finishedDish);
+
+            renderStoveSlots();
+            renderReadyDishes();
+            addLog(`<span class="text-emerald-600"><b>${finishedDish.name}</b> telah siap dimasak!</span>`);
+            showToast(`${finishedDish.name} siap dimasak!`, "success");
+        }
+
+        function renderReadyDishes() {
+            const container = document.getElementById('ready-dishes-container');
+
+            if (gameState.readyDishes.length === 0) {
+                container.innerHTML = `<span class="text-xs text-slate-400 m-auto" id="empty-ready-msg">Dapur kosong. Mula memasak!</span>`;
+                return;
+            }
+
+            container.innerHTML = gameState.readyDishes.map((dish, idx) => {
+                const isSelected = gameState.selectedDishIndex === idx;
+                const borderStyle = isSelected ? 'ring-2 ring-orange-500 scale-105' : 'hover:scale-105';
+
+                return `
+                <div onclick="selectDishToServe(${idx})" class="bg-white border border-slate-200 rounded-xl p-2.5 flex items-center gap-2 cursor-pointer shadow-sm transition transform ${borderStyle}">
+                    <span class="text-xl">${dish.icon}</span>
+                    <div>
+                        <div class="font-bold text-xs text-slate-800">${dish.name}</div>
+                        <div class="text-[9px] text-slate-400">Klik untuk pilih</div>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function selectDishToServe(index) {
+            if (gameState.selectedDishIndex === index) {
+                gameState.selectedDishIndex = null; // deselect
+            } else {
+                gameState.selectedDishIndex = index;
+            }
+            renderReadyDishes();
+        }
+
+        function serveSelectedDishToCustomer(customerIndex) {
+            if (gameState.selectedDishIndex === null) {
+                showToast("Sila pilih makanan dari 'Hidangan Sedia Disajikan' dahulu!", "warning");
+                return;
+            }
+
+            const dish = gameState.readyDishes[gameState.selectedDishIndex];
+            const customer = gameState.customers[customerIndex];
+
+            if (!dish || !customer) return;
+
+            // Check if dish matches order
+            if (dish.id === customer.order.id) {
+                // Success Serve!
+                const earnings = customer.order.price;
+                const bonusTip = customer.patience > 70 ? 2.00 : 0.00; // Tip for fast speed
+                const totalGain = earnings + bonusTip;
+
+                gameState.money += totalGain;
+                gameState.totalCustomers += 1;
+                
+                // Increase reputation
+                gameState.reputation = Math.min(5.0, parseFloat(gameState.reputation) + 0.1).toFixed(1);
+
+                // Remove dish & customer
+                gameState.readyDishes.splice(gameState.selectedDishIndex, 1);
+                gameState.customers.splice(customerIndex, 1);
+                gameState.selectedDishIndex = null;
+
+                let tipMsg = bonusTip > 0 ? ` (+RM ${bonusTip.toFixed(2)} Tip Masa Pantas!)` : '';
+                addLog(`<span class="text-emerald-600"><b>${customer.name}</b> berpuas hati! Bayaran: RM ${totalGain.toFixed(2)}${tipMsg}</span>`);
+                showToast(`Hidangan Berhasil! +RM ${totalGain.toFixed(2)}`, "success");
+
+            } else {
+                // Wrong dish!
+                showToast(`Pesanan salah! ${customer.name} mahukan ${customer.order.name}.`, "error");
+            }
+
+            updateUIStats();
+            renderReadyDishes();
+            renderCustomers();
+        }
+
+        // --- PANTRY & UPGRADES ---
+        function switchTab(tabName) {
+            const upTab = document.getElementById('tab-content-upgrades');
+            const panTab = document.getElementById('tab-content-pantry');
+            const btnUp = document.getElementById('tab-btn-upgrades');
+            const btnPan = document.getElementById('tab-btn-pantry');
+
+            if (tabName === 'upgrades') {
+                upTab.classList.remove('hidden');
+                panTab.classList.add('hidden');
+                btnUp.className = "flex-1 pb-2 text-xs font-bold text-orange-600 border-b-2 border-orange-500 transition-all";
+                btnPan.className = "flex-1 pb-2 text-xs font-bold text-slate-400 border-b-2 border-transparent transition-all";
+            } else {
+                upTab.classList.add('hidden');
+                panTab.classList.remove('hidden');
+                btnPan.className = "flex-1 pb-2 text-xs font-bold text-orange-600 border-b-2 border-orange-500 transition-all";
+                btnUp.className = "flex-1 pb-2 text-xs font-bold text-slate-400 border-b-2 border-transparent transition-all";
+            }
+        }
+
+        function renderPantry() {
+            const container = document.getElementById('pantry-items-list');
+            const ingredientsMap = {
+                rice: { name: 'Beras & Santan', price: 10.00, qty: 10, icon: '🌾' },
+                sambal: { name: 'Cili & Sambal', price: 8.00, qty: 10, icon: '🌶️' },
+                egg: { name: 'Telur Ayam', price: 6.00, qty: 10, icon: '🥚' },
+                noodle: { name: 'Mee Mentah', price: 7.00, qty: 10, icon: '🍜' },
+                veg: { name: 'Sayuran Segar', price: 5.00, qty: 10, icon: '🥬' },
+                tea: { name: 'Serbuk Teh', price: 4.00, qty: 10, icon: '🍃' },
+                milk: { name: 'Susu Pekat', price: 5.00, qty: 10, icon: '🥛' },
+                meat: { name: 'Daging Lembu', price: 20.00, qty: 5, icon: '🥩' },
+                spices: { name: 'Rempah Rendang', price: 12.00, qty: 5, icon: '🧄' }
+            };
+
+            container.innerHTML = Object.keys(gameState.inventory).map(key => {
+                const item = ingredientsMap[key];
+                if (!item) return '';
+
+                return `
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-2.5 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">${item.icon}</span>
+                        <div>
+                            <div class="font-bold text-slate-800">${item.name}</div>
+                            <div class="text-[10px] text-slate-400">Baki Stok: <b class="text-slate-700">${gameState.inventory[key]}</b></div>
+                        </div>
+                    </div>
+                    <button onclick="buyStock('${key}', ${item.price}, ${item.qty})" class="bg-amber-500 hover:bg-amber-600 text-white font-bold text-[10px] px-2.5 py-1.5 rounded-lg shadow-sm transition">
+                        +${item.qty} (RM ${item.price.toFixed(2)})
+                    </button>
+                </div>
+                `;
+            }).join('');
+        }
+
+        function buyStock(itemKey, price, qty) {
+            if (gameState.money >= price) {
+                gameState.money -= price;
+                gameState.inventory[itemKey] += qty;
+                updateUIStats();
+                renderPantry();
+                showToast(`Stok bertambah +${qty}!`, "success");
+            } else {
+                showToast("Wang tidak mencukupi!", "error");
+            }
+        }
+
+        // --- UPGRADE BUTTON ACTIONS ---
+        function buyStoveUpgrade() {
+            const cost = 80.00;
+            const nextSlotIndex = gameState.stoveSlots.findIndex(s => s.status === 'locked');
+            if (nextSlotIndex === -1) {
+                showToast("Dapur memasak sudah maksimum!", "warning");
+                return;
+            }
+
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
+                gameState.stoveSlots[nextSlotIndex].status = 'empty';
+                updateUIStats();
+                renderStoveSlots();
+                showToast("Slot Dapur Baharu dibuka!", "success");
+                document.getElementById('upgrade-stove-cost').innerText = 'MAKSIMUM';
+                document.getElementById('btn-upgrade-stove').disabled = true;
+                document.getElementById('btn-upgrade-stove').classList.add('opacity-50');
+            } else {
+                showToast("Wang tidak mencukupi!", "error");
+            }
+        }
+
+        function buySpeedUpgrade() {
+            const cost = 120.00;
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
+                gameState.cookingSpeedMultiplier = 1.35; // +35% speed
+                updateUIStats();
+                showToast("Kelajuan Dapur Ditingkatkan!", "success");
+                document.getElementById('upgrade-speed-cost').innerText = 'TELAH DIBELI';
+                document.getElementById('btn-upgrade-speed').disabled = true;
+                document.getElementById('btn-upgrade-speed').classList.add('opacity-50');
+            } else {
+                showToast("Wang tidak mencukupi!", "error");
+            }
+        }
+
+        function unlockRendang() {
+            const cost = 200.00;
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
+                gameState.recipes.rendang.locked = false;
+                updateUIStats();
+                renderRecipes();
+                showToast("Resepi Rendang Daging Dibuka!", "success");
+                document.getElementById('btn-unlock-rendang').disabled = true;
+                document.getElementById('btn-unlock-rendang').innerText = 'TELAH DIBUKA';
+                document.getElementById('btn-unlock-rendang').classList.add('opacity-50');
+            } else {
+                showToast("Wang tidak mencukupi!", "error");
+            }
+        }
+
+        function buyDecor() {
+            const cost = 150.00;
+            if (gameState.money >= cost) {
+                gameState.money -= cost;
+                gameState.patienceMultiplier = 1.3; // +30% patience
+                document.getElementById('restaurant-level').innerText = 'Restoran Mewah';
+                updateUIStats();
+                showToast("Hiasan Dibeli! Pelanggan lebih sabar.", "success");
+                document.getElementById('btn-buy-decor').disabled = true;
+                document.getElementById('btn-buy-decor').innerText = 'TELAH DIBELI';
+                document.getElementById('btn-buy-decor').classList.add('opacity-50');
+            } else {
+                showToast("Wang tidak mencukupi!", "error");
+            }
+        }
+
+        // --- HELPERS & UI UPDATES ---
+        function updateUIStats() {
+            document.getElementById('stat-money').innerText = `RM ${gameState.money.toFixed(2)}`;
+            document.getElementById('stat-reputation').innerText = `${gameState.reputation} / 5.0`;
+            document.getElementById('stat-customers').innerText = gameState.totalCustomers;
+        }
+
+        function addLog(msg) {
+            const logBox = document.getElementById('activity-log');
+            const time = new Date().toLocaleTimeString('ms-MY', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const p = document.createElement('p');
+            p.innerHTML = `<span class="text-slate-400 text-[10px]">[${time}]</span> ${msg}`;
+            logBox.prepend(p);
+        }
+
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMsg.innerText = message;
+
+            if (type === 'error') {
+                toastIcon.className = "fa-solid fa-circle-xmark text-rose-400 text-base";
+            } else if (type === 'success') {
+                toastIcon.className = "fa-solid fa-circle-check text-emerald-400 text-base";
+            } else {
+                toastIcon.className = "fa-solid fa-circle-info text-amber-400 text-base";
+            }
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
